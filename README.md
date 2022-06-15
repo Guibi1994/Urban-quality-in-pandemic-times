@@ -13,10 +13,10 @@ This repository contains the data and the scripts used in the articule "Urban qu
 The sample contians exactly 12 months of traking data, however not all the users have a permant record over each month, so we aplied 3 rules to extract a final sample:
 
 1. Individuals must have data over at least 9 months
-2. Individuals must have at least "$$X$$" traking poitns per month
+2. Individuals must have at least "$X$" traking poitns per month
 3. Individuals must live inside Bogota's urban limit during the analized period.
 
-Taking thise into acount, the next setp is to deside what the value of "$$X$$" should be: 
+Taking thise into acount, the next setp is to deside what the value of "$X$" should be: 
 
 ![alt text](https://github.com/Guibi1994/Urban-quality-in-pandemic-times/blob/main/3.%20Graficas/0.%20Seleccion%20muestral%20Traking%20points.png)
 
