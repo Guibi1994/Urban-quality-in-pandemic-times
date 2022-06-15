@@ -13,9 +13,13 @@ a0_raw <- readRDS("0. Datos/1. Serivi-informacion 2020.RDS")
 names(a0_raw)
 paste0("From ",min(a0_raw$date)," to ",max(a0_raw$date))
 
-# 2. Resumenes iniciales ----
+# 2. Selección Muestral ----
 
-## 2.1. Traking points por ID y mes  ----
+
+  
+## 2.2. ID's con superviviencia digital ----
+
+### 2.2.1. Traking points por ID y mes  ----
 R1_IDs_por_mes <- a0_raw %>% 
   # Determinar mes del punto
   mutate(month = as.Date(paste0(substr(date,1,8),"01"))) %>% 
@@ -23,13 +27,8 @@ R1_IDs_por_mes <- a0_raw %>%
   group_by(identifier, month) %>% 
   summarize(poitns = n()) %>% 
   as.data.frame()
-  
-## 2.2. Identificación de ID's sobrevivientes ----
-  ###
 
-
-
-# loop vaiando por mínimo número de puntos
+### 2.2.2. Loop vaiando por mínimo número de puntos ----
 
 pr <- data.frame(
   puntos_mes = numeric(),
@@ -57,7 +56,8 @@ for (i in seq(15,120)) {
   
 }
 
-install.packages("ggpubr")
+
+### 2.2.3. Graficación de resultados ----
 
 p1 <- pr %>%  ggplot(aes(puntos_mes,IDs_totales))+
   geom_path(color ="red") +
@@ -110,9 +110,11 @@ pt <- ggpubr::ggarrange(
   p3,(ggpubr::ggarrange(p1,p2,ncol = 2)),nrow = 2)
 
 ggsave("3. Graficas/0. Seleccion muestral Traking points.png",pt, w = 10, h = 10)
-pt
 
+### 2.2.4. Identificación de IDs con condiciones ideales
 
+# A) Mínimo 30 TK por mes
+# B) Mínimo 6 periodos (meses) en la base
 
 
 
