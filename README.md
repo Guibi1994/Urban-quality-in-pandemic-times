@@ -9,6 +9,12 @@ This repository contains the data and the scripts used in the articule "Urban qu
 - 524.020 different IDs
 
 
+
+
+
+
+## Some methofological notes
+
 ### Sample selection
 
 Its important to keep in mind, that the sample size selecction must have into consideration: a) The amount of traking data per individual, since its important to capture the movement of poeple outside their home; b)  the representativeness of the sample at the neighborhood level; and c) the geographic distribution (since it's possible that low income neighborhoods are not represented enough).
