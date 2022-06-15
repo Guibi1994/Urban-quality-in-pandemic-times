@@ -20,3 +20,5 @@ Taking thise into acount, the next setp is to deside what the value of "$X$" sho
 
 ![alt text](https://github.com/Guibi1994/Urban-quality-in-pandemic-times/blob/main/3.%20Graficas/0.%20Seleccion%20muestral%20Traking%20points.png)
 
+Its important to keep in mind, that the sample size selecction must have into consideration: a) the representativeness of the sample at the neighborhood level; b) the geographic distribution (since it's possible that low income neighborhoods are not represented enough); an the amount of traking data per individual, since its important to capture the movement of poeple outside their homes.
+
