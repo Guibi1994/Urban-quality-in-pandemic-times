@@ -18,3 +18,5 @@ The sample contians exactly 12 months of traking data, however not all the users
 
 Taking 
 
+![alt text](https://github.com/Guibi1994/Urban-quality-in-pandemic-times/blob/main/3.%20Graficas/0.%20Seleccion%20muestral%20Traking%20points.png)
+
