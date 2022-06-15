@@ -26,13 +26,68 @@ R1_IDs_por_mes <- a0_raw %>%
   
 ## 2.2. Identificación de ID's sobrevivientes ----
   ###
-R2_IDs_sobrevivientes <- R1_IDs_por_mes %>% 
-  group_by(identifier) %>% 
-  mutate(peridos = n()) %>% 
-  as.data.frame()
+
+
+
+# loop vaiando por mínimo número de puntos
+
+pr <- data.frame(
+  puntos_mes = numeric(),
+  IDs_totales = numeric(),
+  traking_points = numeric())
+
+
+for (i in seq(15,120)) {
+  x <- R1_IDs_por_mes %>% 
+    filter(poitns >= i) %>% 
+    group_by(identifier) %>% 
+    mutate(peridos = n()) %>% 
+    as.data.frame() %>% 
+    filter(peridos >= 9) %>% 
+    as.data.frame()
   
-pr %>% ggplot(aes(peridos)) +
-  geom_bar()
+  y <- data.frame(
+    puntos_mes = i,
+    IDs_totales = nlevels(as.factor(x$identifier)),
+    traking_points = sum(x$poitns, na.rm = T))
+  
+  pr <- rbind(pr,y)
+  print(paste0("Completado al ",round( (((i-14)/(15-120*-1))*100),2),"%"))
+  
+}
+
+install.packages("ggpubr")
+
+pt <- ggarrange(
+
+pr %>%  ggplot(aes(puntos_mes,IDs_totales))+
+  geom_path(color ="red") +
+  scale_y_continuous(labels = scales::comma,
+                     breaks = scales::pretty_breaks(12)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
+  geom_vline(xintercept = c(30,60,90,120),lty = 2)+
+  labs(title = "Comportamiento del tamaño muestral variando el\nmínimo de traking poitns al mes",
+       subtitle = "*Prefiltro de individuos con 9 meses o mas se superviviencia",
+       x = "Mínimo de traking points mensuales",
+       y = "Tamaño muestral final (IDs)")+
+  theme_minimal()+
+  theme(text = element_text(family = "serif"),
+        plot.subtitle = element_text(color = "grey50")),
 
 
+pr %>%  ggplot(aes(puntos_mes,IDs_totales/524020))+
+  geom_path(color ="red") +
+  scale_y_continuous(labels = scales::percent_format(),
+                     breaks = scales::pretty_breaks(12)) +
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
+  geom_vline(xintercept = c(30,60,90,120),lty = 2)+
+  labs(title = "Comportamiento de la reducción muestral variando el\nmínimo de traking poitns al mes",
+       subtitle = "*Prefiltro de individuos con 9 meses o mas se superviviencia",
+       x = "Mínimo de traking points mensuales",
+       y = "% de la muestra utilizado (IDs)")+
+  theme_minimal()+
+  theme(text = element_text(family = "serif"),
+        plot.subtitle = element_text(color = "grey50")), nrow = 1)
+
+ggsave("3. Graficas/0. Seleccion muestral Traking points.png",pt, w = 10, h = 6)
 # View(head(a0_raw,100))
