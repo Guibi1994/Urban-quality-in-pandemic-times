@@ -39,11 +39,12 @@ pr <- data.frame(
 
 for (i in seq(15,120)) {
   x <- R1_IDs_por_mes %>% 
-    filter(poitns >= i) %>% 
     group_by(identifier) %>% 
-    mutate(peridos = n()) %>% 
+    mutate(min_TK = min(poitns,na.rm = T),
+           peridos = n()) %>% 
     as.data.frame() %>% 
-    filter(peridos >= 9) %>% 
+    filter(min_TK >= i) %>% 
+    filter(peridos >= 6) %>% 
     as.data.frame()
   
   y <- data.frame(
@@ -52,7 +53,7 @@ for (i in seq(15,120)) {
     traking_points = sum(x$poitns, na.rm = T))
   
   pr <- rbind(pr,y)
-  print(paste0("Completado al ",round( (((i-14)/(15-120*-1))*100),2),"%"))
+  print(paste0("Completado al ",round(((i-14)/106)*100,2),"%"))
   
 }
 
@@ -97,7 +98,7 @@ p3 <- pr %>%  ggplot(aes(puntos_mes,traking_points/nrow(a0_raw)))+
   geom_vline(xintercept = c(30,60,90,120),lty = 2, 
              color = c("green",sample("grey50",3, replace = T)))+
   labs(title = "Relación entre el umbral de putnos mensuales y la reducción \nmuestral de traking-poitns",
-       subtitle = "*Prefiltro de individuos con 9 meses o mas se superviviencia",
+       subtitle = "*Prefiltro de individuos con 6 meses o mas se superviviencia",
        x = "Mínimo de traking points mensuales",
        y = "% de la muestra utilizado (IDs)")+
   theme_minimal()+
@@ -109,7 +110,7 @@ pt <- ggpubr::ggarrange(
   p3,(ggpubr::ggarrange(p1,p2,ncol = 2)),nrow = 2)
 
 ggsave("3. Graficas/0. Seleccion muestral Traking points.png",pt, w = 10, h = 10)
-
+pt
 
 
 
