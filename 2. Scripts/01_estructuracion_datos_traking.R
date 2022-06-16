@@ -1,5 +1,8 @@
 # Revisión de datos de movilidad
 
+# Unidades target
+  # Espacial: Barrio
+  # Temporal: Semana
 
 # 0. Pasos previos ----
 
@@ -22,7 +25,10 @@ paste0("From ",min(a0_raw$date)," to ",max(a0_raw$date))
 ### 2.2.1. Traking points por ID y mes  ----
 R1_IDs_por_mes <- a0_raw %>% 
   # Determinar mes del punto
-  mutate(month = as.Date(paste0(substr(date,1,8),"01"))) %>% 
+  mutate(month = as.Date(paste0(substr(date,1,8),"01")),
+         day = lubridate::wday(date,abbr = T)-1,
+         day = ifelse(day == 0,7,day),
+         week = date - (day-1)) %>% 
   # Agrupar por ID y mes
   group_by(identifier, month) %>% 
   summarize(poitns = n()) %>% 
@@ -58,56 +64,53 @@ for (i in seq(15,120)) {
 
 
 ### 2.2.3. Graficación de resultados ----
-
-p1 <- pr %>%  ggplot(aes(puntos_mes,IDs_totales))+
-  geom_path(color ="red") +
-  scale_y_continuous(labels = scales::comma,
-                     breaks = scales::pretty_breaks(12)) +
-  scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
-  geom_vline(xintercept = c(30,60,90,120),lty = 2, 
-             color = c("green",sample("grey50",3, replace = T)))+
-  labs(title = "Comportamiento del tamaño muestral variando el\nmínimo de traking poitns al mes",
-       #subtitle = "*Prefiltro de individuos con 9 meses o mas se superviviencia",
-       x = "Mínimo de traking points mensuales",
-       y = "Tamaño muestral final (IDs)")+
-  theme_minimal()+
-  theme(text = element_text(family = "serif"),
-        plot.subtitle = element_text(color = "grey50"))
-
-
-p2<- pr %>%  ggplot(aes(puntos_mes,IDs_totales/524020))+
-  geom_path(color ="red") +
-  scale_y_continuous(labels = scales::percent_format(),
-                     breaks = scales::pretty_breaks(12)) +
-  scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
-  geom_vline(xintercept = c(30,60,90,120),lty = 2, 
-             color = c("green",sample("grey50",3, replace = T)))+
-  labs(title = "Relación entre el umbral de putnos mensuales y la reducción \nmuestral de Individuos",
-       #subtitle = "*Prefiltro de individuos con 9 meses o mas se superviviencia",
-       x = "Mínimo de traking points mensuales",
-       y = "% de la muestra utilizado (IDs)")+
-  theme_minimal()+
-  theme(text = element_text(family = "serif"),
-        plot.subtitle = element_text(color = "grey50"))
-
-p3 <- pr %>%  ggplot(aes(puntos_mes,traking_points/nrow(a0_raw)))+
-  geom_path(color ="cyan4") +
-  scale_y_continuous(labels = scales::percent_format(),
-                     breaks = scales::pretty_breaks(12)) +
-  scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
-  geom_vline(xintercept = c(30,60,90,120),lty = 2, 
-             color = c("green",sample("grey50",3, replace = T)))+
-  labs(title = "Relación entre el umbral de putnos mensuales y la reducción \nmuestral de traking-poitns",
-       subtitle = "*Prefiltro de individuos con 6 meses o mas se superviviencia",
-       x = "Mínimo de traking points mensuales",
-       y = "% de la muestra utilizado (IDs)")+
-  theme_minimal()+
-  theme(text = element_text(family = "serif"),
-        plot.subtitle = element_text(color = "grey50", hjust = 0.5),
-        plot.title = element_text(hjust = 0.5))
-
 pt <- ggpubr::ggarrange(
-  p3,(ggpubr::ggarrange(p1,p2,ncol = 2)),nrow = 2)
+  (pr %>%  ggplot(aes(puntos_mes,traking_points/nrow(a0_raw)))+
+     geom_path(color ="cyan4") +
+     scale_y_continuous(labels = scales::percent_format(),
+                        breaks = scales::pretty_breaks(12)) +
+     scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
+     geom_vline(xintercept = c(30,60,90,120),lty = 2, 
+                color = c("green",sample("grey50",3, replace = T)))+
+     labs(title = "Relación entre el umbral de putnos mensuales y la reducción \nmuestral de traking-poitns",
+          subtitle = "*Prefiltro de individuos con 6 meses o mas se superviviencia",
+          x = "Mínimo de traking points mensuales",
+          y = "% de la muestra utilizado (IDs)")+
+     theme_minimal()+
+     theme(text = element_text(family = "serif"),
+           plot.subtitle = element_text(color = "grey50", hjust = 0.5),
+           plot.title = element_text(hjust = 0.5))),
+  (ggpubr::ggarrange(
+    (pr %>%  ggplot(aes(puntos_mes,IDs_totales))+
+       geom_path(color ="red") +
+       scale_y_continuous(labels = scales::comma,
+                          breaks = scales::pretty_breaks(12)) +
+       scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
+       geom_vline(xintercept = c(30,60,90,120),lty = 2, 
+                  color = c("green",sample("grey50",3, replace = T)))+
+       labs(title = "Comportamiento del tamaño muestral variando el\nmínimo de traking poitns al mes",
+            #subtitle = "*Prefiltro de individuos con 9 meses o mas se superviviencia",
+            x = "Mínimo de traking points mensuales",
+            y = "Tamaño muestral final (IDs)")+
+       theme_minimal()+
+       theme(text = element_text(family = "serif"),
+             plot.subtitle = element_text(color = "grey50"))),
+    (pr %>%  ggplot(aes(puntos_mes,IDs_totales/524020))+
+       geom_path(color ="red") +
+       scale_y_continuous(labels = scales::percent_format(),
+                          breaks = scales::pretty_breaks(12)) +
+       scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
+       geom_vline(xintercept = c(30,60,90,120),lty = 2, 
+                  color = c("green",sample("grey50",3, replace = T)))+
+       labs(title = "Relación entre el umbral de putnos mensuales y la reducción \nmuestral de Individuos",
+            #subtitle = "*Prefiltro de individuos con 9 meses o mas se superviviencia",
+            x = "Mínimo de traking points mensuales",
+            y = "% de la muestra utilizado (IDs)")+
+       theme_minimal()+
+       theme(text = element_text(family = "serif"),
+             plot.subtitle = element_text(color = "grey50"))),
+    ncol = 2)),nrow = 2)
+
 
 ggsave("3. Graficas/0. Seleccion muestral Traking points.png",pt, w = 10, h = 10)
 
