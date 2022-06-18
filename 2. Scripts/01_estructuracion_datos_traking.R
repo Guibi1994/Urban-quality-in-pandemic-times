@@ -146,15 +146,30 @@ ggsave("3. Graficas/01. Average monthly TK per samlped user.png", w = 4, h = 5)
 
 pr1 <- pr %>% 
   group_by(start, end) %>% 
-  summarise(individuals = n())
+  summarise(individuals = n(),
+            total_poitns = sum(total_poitns))
 Sys.setlocale("LC_TIME", "English")
 
 pr1 %>% ggplot(aes(start, end, fill = individuals,
                    labels = individuals))+
   geom_tile() +
+  scale_color_gradient(high = "red",low = "blue")+
   scale_y_date(breaks = scales::pretty_breaks(n = 10))+
   scale_x_date(breaks = scales::pretty_breaks(n = 10))+
   geom_text(aes(label =  individuals,
+                family = "serif",), color = "white")+
+  labs(title = "Sampling distribution acording to individual date intervals")+
+  theme_minimal() +
+  theme(text = element_text(family = "serif"),
+        legend.position = "none")
+
+pr1 %>% ggplot(aes(start, end, fill = total_poitns,
+                   labels = total_poitns))+
+  geom_tile() +
+  scale_color_gradient(high = "red",low = "blue")+
+  scale_y_date(breaks = scales::pretty_breaks(n = 10))+
+  scale_x_date(breaks = scales::pretty_breaks(n = 10))+
+  geom_text(aes(label =  total_poitns,
                 family = "serif",), color = "white")+
   labs(title = "Sampling distribution acording to individual date intervals")+
   theme_minimal() +
