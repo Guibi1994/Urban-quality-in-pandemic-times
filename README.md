@@ -33,8 +33,8 @@ PENDIENTE:
 - Por que primero el filtro de mínimos puntos por mes y lugo el de mínimo de periodos
 - Explicar el concepto de supervivencia digital continua
 - Histograma de superviviencia
-g
-![alt text]()
+
+![alt text](https://github.com/Guibi1994/Urban-quality-in-pandemic-times/blob/main/3.%20Graficas/01.%20Average%20monthly%20TK%20per%20samlped%20user.png)
 
 #### 1.2. Residence and neighborhood representativeness
 
