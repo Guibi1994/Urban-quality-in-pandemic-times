@@ -33,7 +33,7 @@ PENDIENTE:
 - Por que primero el filtro de mínimos puntos por mes y lugo el de mínimo de periodos
 - Explicar el concepto de supervivencia digital continua
 - Histograma de superviviencia
-
+g
 ![alt text]()
 
 #### 1.2. Residence and neighborhood representativeness
