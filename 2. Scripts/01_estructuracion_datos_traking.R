@@ -13,9 +13,6 @@ library(ggplot2)
 # 0.2. Datos
 a0_raw <- readRDS("0. Datos/1. Serivi-informacion 2020.RDS")
 
-names(a0_raw)
-paste0("From ",min(a0_raw$date)," to ",max(a0_raw$date))
-
 # 2. Selección Muestral ----
 
 
@@ -25,14 +22,15 @@ paste0("From ",min(a0_raw$date)," to ",max(a0_raw$date))
 ### 2.2.1. Traking points por ID y mes  ----
 R1_IDs_por_mes <- a0_raw %>% 
   # Determinar mes del punto
-  mutate(month = as.Date(paste0(substr(date,1,8),"01")),
-         day = lubridate::wday(date,abbr = T)-1,
-         day = ifelse(day == 0,7,day),
-         week = date - (day-1)) %>% 
+  mutate(month = as.Date(paste0(substr(date,1,8),"01"))) %>% 
   # Agrupar por ID y mes
   group_by(identifier, month) %>% 
-  summarize(poitns = n()) %>% 
-  as.data.frame()
+  summarize(points = n()) %>% 
+  as.data.frame() %>% 
+  group_by(identifier) %>% 
+  mutate(periodos = n(),
+         minimos_TK = min(points))
+
 
 ### 2.2.2. Loop vaiando por mínimo número de puntos ----
 
@@ -45,7 +43,7 @@ pr <- data.frame(
 for (i in seq(15,120)) {
   x <- R1_IDs_por_mes %>% 
     group_by(identifier) %>% 
-    mutate(min_TK = min(poitns,na.rm = T),
+    mutate(min_TK = min(points,na.rm = T),
            peridos = n()) %>% 
     as.data.frame() %>% 
     filter(min_TK >= i) %>% 
@@ -55,7 +53,7 @@ for (i in seq(15,120)) {
   y <- data.frame(
     puntos_mes = i,
     IDs_totales = nlevels(as.factor(x$identifier)),
-    traking_points = sum(x$poitns, na.rm = T))
+    traking_points = sum(x$points, na.rm = T))
   
   pr <- rbind(pr,y)
   print(paste0("Completado al ",round(((i-14)/106)*100,2),"%"))
@@ -115,6 +113,36 @@ pt <- ggpubr::ggarrange(
 ggsave("3. Graficas/0. Seleccion muestral Traking points.png",pt, w = 10, h = 10)
 
 ### 2.2.4. Identificación de IDs con condiciones ideales
+
+
+pr <- R1_IDs_por_mes %>% 
+  filter(periodos >= 6 & minimos_TK >=30) %>% 
+  group_by(identifier) %>% 
+  summarise(start = min(month),
+            end = max(month),
+            periodos = mean(periodos,na.rm = T),
+            total_poitns = sum(points, na.rm = T),
+            monthly_points = mean(points, na.rm = T)) %>% 
+  as.data.frame()
+
+
+pr %>% ggplot(aes(monthly_points))+
+  geom_histogram(fill = "cyan3", color = "cyan3", alpha = 0.1)+
+  geom_vline(xintercept = c(mean(pr$monthly_points), 
+                            median(pr$monthly_points)),
+             lty = c(1,2)) +
+  labs(title = "Average monthly poitns per indiviudal",
+       subtitle = paste0("Sample size = ", nrow(pr)),
+       x = "Average montlhy traking poitns",
+       y = "Individuals",
+       caption = 
+         "* Doted line: sample's mean (205)\n**Continous line: sample's median (177)")+
+  scale_x_continuous(breaks = scales::pretty_breaks(n = 8))+
+  theme_minimal()+
+  theme(text = element_text(family = "serif", size = 8))
+
+ggsave("3. Graficas/01. Average monthly TK per samlped user.png", w = 4, h = 5)
+
 
 # A) Mínimo 30 TK por mes
 # B) Mínimo 6 periodos (meses) en la base

@@ -12,10 +12,10 @@ pr <- data.frame(
 
 
 pr <- pr %>% 
-  mutate(dia = weekdays(date),
-         day = lubridate::wday(date,abbr = T)-1,
+  mutate(day = lubridate::wday(date,abbr = T)-1,
          day = ifelse(day == 0,7,day),
-         week = date - (day-1)) %>% 
+         week = date - (day-1))
+
   group_by(week) %>% 
   mutate(week_code = cur_group_id())
 
