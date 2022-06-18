@@ -144,9 +144,29 @@ pr %>% ggplot(aes(monthly_points))+
 ggsave("3. Graficas/01. Average monthly TK per samlped user.png", w = 4, h = 5)
 
 
+pr1 <- pr %>% 
+  group_by(start, end) %>% 
+  summarise(individuals = n())
+Sys.setlocale("LC_TIME", "English")
+
+pr1 %>% ggplot(aes(start, end, fill = individuals,
+                   labels = individuals))+
+  geom_tile() +
+  scale_y_date(breaks = scales::pretty_breaks(n = 10))+
+  scale_x_date(breaks = scales::pretty_breaks(n = 10))+
+  geom_text(aes(label =  individuals,
+                family = "serif",), color = "white")+
+  labs(title = "Sampling distribution acording to individual date intervals")+
+  theme_minimal() +
+  theme(text = element_text(family = "serif"),
+        legend.position = "none")
+
 # A) Mínimo 30 TK por mes
 # B) Mínimo 6 periodos (meses) en la base
 
+
+
+lubridate::month(pr1$start[1], label = T)
 
 
 
