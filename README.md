@@ -34,6 +34,7 @@ PENDIENTE:
 - Explicar el concepto de supervivencia digital continua
 - Histograma de superviviencia
 
+![alt text]()
 
 #### 1.2. Residence and neighborhood representativeness
 
