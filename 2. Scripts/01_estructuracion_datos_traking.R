@@ -7,6 +7,7 @@
 # 0. Pasos previos ----
 
 # 0.1. Librerias
+Sys.setlocale("LC_TIME", "English")
 library(dplyr)
 library(ggplot2)
 
@@ -57,11 +58,14 @@ for (i in seq(15,120)) {
   
   pr <- rbind(pr,y)
   print(paste0("Completado al ",round(((i-14)/106)*100,2),"%"))
+  rm(x,y)
   
 }
 
 
 ### 2.2.3. Graficación de resultados ----
+
+#### 2.2.3.1. 
 pt <- ggpubr::ggarrange(
   (pr %>%  ggplot(aes(puntos_mes,traking_points/nrow(a0_raw)))+
      geom_path(color ="cyan4") +
@@ -70,10 +74,10 @@ pt <- ggpubr::ggarrange(
      scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
      geom_vline(xintercept = c(30,60,90,120),lty = 2, 
                 color = c("green",sample("grey50",3, replace = T)))+
-     labs(title = "Relación entre el umbral de putnos mensuales y la reducción \nmuestral de traking-poitns",
-          subtitle = "*Prefiltro de individuos con 6 meses o mas se superviviencia",
-          x = "Mínimo de traking points mensuales",
-          y = "% de la muestra utilizado (IDs)")+
+     labs(title = "Relationship between the threshold of monthly points and the \nsample reduction of tracking-points",
+          subtitle = "*Prefilter of individuals with 6 months or more of survival",
+          x = "Minimum monthly tracking points",
+          y = "% of the total TK")+
      theme_minimal()+
      theme(text = element_text(family = "serif"),
            plot.subtitle = element_text(color = "grey50", hjust = 0.5),
@@ -86,10 +90,10 @@ pt <- ggpubr::ggarrange(
        scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
        geom_vline(xintercept = c(30,60,90,120),lty = 2, 
                   color = c("green",sample("grey50",3, replace = T)))+
-       labs(title = "Comportamiento del tamaño muestral variando el\nmínimo de traking poitns al mes",
+       labs(title = "Behavior of the sample size varying the\nminimum of tracking points per month",
             #subtitle = "*Prefiltro de individuos con 9 meses o mas se superviviencia",
-            x = "Mínimo de traking points mensuales",
-            y = "Tamaño muestral final (IDs)")+
+            x = "Minimum monthly tracking points",
+            y = "Total IDs")+
        theme_minimal()+
        theme(text = element_text(family = "serif"),
              plot.subtitle = element_text(color = "grey50"))),
@@ -100,22 +104,22 @@ pt <- ggpubr::ggarrange(
        scale_x_continuous(breaks = scales::pretty_breaks(n = 10))+
        geom_vline(xintercept = c(30,60,90,120),lty = 2, 
                   color = c("green",sample("grey50",3, replace = T)))+
-       labs(title = "Relación entre el umbral de putnos mensuales y la reducción \nmuestral de Individuos",
+       labs(title = "Relationship between the threshold of monthly points and the \nsample reduction of Individuals",
             #subtitle = "*Prefiltro de individuos con 9 meses o mas se superviviencia",
-            x = "Mínimo de traking points mensuales",
-            y = "% de la muestra utilizado (IDs)")+
+            x = "Minimum monthly tracking points",
+            y = "% of the total IDs")+
        theme_minimal()+
        theme(text = element_text(family = "serif"),
              plot.subtitle = element_text(color = "grey50"))),
     ncol = 2)),nrow = 2)
 
-
+pt
 ggsave("3. Graficas/0. Seleccion muestral Traking points.png",pt, w = 10, h = 10)
 
 ### 2.2.4. Identificación de IDs con condiciones ideales
 
 
-pr <- R1_IDs_por_mes %>% 
+R2_IDs_muestra_inicial <- R1_IDs_por_mes %>% 
   filter(periodos >= 6 & minimos_TK >=30) %>% 
   group_by(identifier) %>% 
   summarise(start = min(month),
@@ -126,68 +130,49 @@ pr <- R1_IDs_por_mes %>%
   as.data.frame()
 
 
-pr %>% ggplot(aes(monthly_points))+
-  geom_histogram(fill = "cyan3", color = "cyan3", alpha = 0.1)+
-  geom_vline(xintercept = c(mean(pr$monthly_points), 
-                            median(pr$monthly_points)),
-             lty = c(1,2)) +
-  labs(title = "Average monthly poitns per indiviudal",
-       subtitle = paste0("Sample size = ", nrow(pr)),
-       x = "Average montlhy traking poitns",
-       y = "Individuals",
-       caption = 
-         "* Doted line: sample's mean (205)\n**Continous line: sample's median (177)")+
-  scale_x_continuous(breaks = scales::pretty_breaks(n = 8))+
-  theme_minimal()+
-  theme(text = element_text(family = "serif", size = 8))
 
-ggsave("3. Graficas/01. Average monthly TK per samlped user.png", w = 4, h = 5)
-
-
-pr1 <- pr %>% 
-  group_by(start, end) %>% 
-  summarise(individuals = n(),
-            total_poitns = sum(total_poitns))
-Sys.setlocale("LC_TIME", "English")
-
-pr1 %>% ggplot(aes(start, end, fill = individuals,
-                   labels = individuals))+
-  geom_tile() +
-  scale_color_gradient(high = "red",low = "blue")+
-  scale_y_date(breaks = scales::pretty_breaks(n = 10))+
-  scale_x_date(breaks = scales::pretty_breaks(n = 10))+
-  geom_text(aes(label =  individuals,
-                family = "serif",), color = "white")+
-  labs(title = "Sampling distribution acording to individual date intervals")+
-  theme_minimal() +
-  theme(text = element_text(family = "serif"),
-        legend.position = "none")
-
-pr1 %>% ggplot(aes(start, end, fill = total_poitns,
-                   labels = total_poitns))+
-  geom_tile() +
-  scale_color_gradient(high = "red",low = "blue")+
-  scale_y_date(breaks = scales::pretty_breaks(n = 10))+
-  scale_x_date(breaks = scales::pretty_breaks(n = 10))+
-  geom_text(aes(label =  total_poitns,
-                family = "serif",), color = "white")+
-  labs(title = "Sampling distribution acording to individual date intervals")+
-  theme_minimal() +
-  theme(text = element_text(family = "serif"),
-        legend.position = "none")
-
-# A) Mínimo 30 TK por mes
-# B) Mínimo 6 periodos (meses) en la base
-
-
-
-lubridate::month(pr1$start[1], label = T)
+pt <- ggpubr::ggarrange(
+  # Histogram of monthly poins per individual
+  R2_IDs_muestra_inicial %>% ggplot(aes(monthly_points))+
+    geom_histogram(fill = "cyan3", color = "cyan3", alpha = 0.1)+
+    geom_vline(xintercept = c(mean(R2_IDs_muestra_inicial$monthly_points), 
+                              median(R2_IDs_muestra_inicial$monthly_points)),
+               lty = c(1,2)) +
+    labs(title = "Average monthly poitns per indiviudal",
+         subtitle = paste0("Sample size = ", nrow(pr)),
+         x = "Average montlhy traking poitns",
+         y = "Individuals",
+         caption = 
+           "* Doted line: sample's mean (205)\n**Continous line: sample's median (177)")+
+    scale_x_continuous(breaks = scales::pretty_breaks(n = 8))+
+    theme_minimal()+
+    theme(text = element_text(family = "serif", size = 8)) ,
+  
+  # Hotspot table of starting and ending traked months
+  R2_IDs_muestra_inicial %>% 
+    group_by(start, end) %>% 
+    summarise(individuals = n(),
+              total_poitns = sum(total_poitns)) %>%
+    ggplot(aes(start, end))+
+    geom_tile(aes(fill = individuals/sum(individuals))) +
+    scale_fill_gradient(high = c("red","red2","red4"),
+                        low = c("cyan4","cyan3"))+
+    
+    scale_y_date(breaks = scales::pretty_breaks(n = 10))+
+    scale_x_date(breaks = scales::pretty_breaks(n = 10))+
+    geom_text(aes(label =  paste0(
+      (round((100*individuals/sum(individuals)),1))
+      ,"%"),
+      family = "serif",), color = "white")+
+    labs(title = "Sampling distribution by individual's date intervals",
+         x  = "First traked month",y ="Last traked month")+
+    theme_minimal() +
+    theme(text = element_text(family = "serif",siz = 8),
+          legend.position = "none"))
+ggsave("3. Graficas/01. Average monthly TK per samlped user.png",pt, w = 10, h = 10)
 
 
 # afdasfsdf
-
-
-
 
 
 
