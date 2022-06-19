@@ -12,15 +12,20 @@ library(dplyr)
 library(ggplot2)
 
 # 0.2. Datos
-a0_raw <- readRDS("0. Datos/1. Serivi-informacion 2020.RDS")
+a0_raw <- readRDS("0. Datos/1. Serivi-informacion 2020.RDS") %>% 
+  # Change UTM(0) tu UTM(-5)
+  mutate(date = date-((1/24)*5)+((1/24)*hour),
+         hour = ifelse(
+           hour >=5, hour-5, (hour+24)-5))
+
 
 # 2. Selección Muestral ----
 
 
   
-## 2.2. ID's con superviviencia digital ----
+## 2.1. ID's con superviviencia digital ----
 
-### 2.2.1. Traking points por ID y mes  ----
+### 2.1.1. Traking points por ID y mes  ----
 R1_IDs_por_mes <- a0_raw %>% 
   # Determinar mes del punto
   mutate(month = as.Date(paste0(substr(date,1,8),"01"))) %>% 
@@ -33,12 +38,12 @@ R1_IDs_por_mes <- a0_raw %>%
          minimos_TK = min(points))
 
 
-### 2.2.2. Loop vaiando por mínimo número de puntos ----
+### 2.1.2. Loop vaiando por mínimo número de puntos ----
 
 pr <- data.frame(
   puntos_mes = numeric(),
   IDs_totales = numeric(),
-  traking_points = numeric())
+  traking_points = numeric())  
 
 
 for (i in seq(15,120)) {
@@ -62,10 +67,24 @@ for (i in seq(15,120)) {
   
 }
 
+### 2.1.4. Identificación de IDs con condiciones ideales ----
 
-### 2.2.3. Graficación de resultados ----
 
-#### 2.2.3.1. 
+R2_IDs_muestra_inicial <- R1_IDs_por_mes %>% 
+  filter(periodos >= 6 & minimos_TK >=30) %>% 
+  group_by(identifier) %>% 
+  summarise(start = min(month),
+            end = max(month),
+            periodos = mean(periodos,na.rm = T),
+            total_poitns = sum(points, na.rm = T),
+            monthly_points = mean(points, na.rm = T)) %>% 
+  as.data.frame() %>% 
+  arrange(total_poitns, periodos)
+
+
+### 2.1.3. Graficación de resultados ----
+
+#### 2.1.3.1. Sampling behaviur by minimum acceptable monthly TK ----
 pt <- ggpubr::ggarrange(
   (pr %>%  ggplot(aes(puntos_mes,traking_points/nrow(a0_raw)))+
      geom_path(color ="cyan4") +
@@ -116,21 +135,9 @@ pt <- ggpubr::ggarrange(
 pt
 ggsave("3. Graficas/0. Seleccion muestral Traking points.png",pt, w = 10, h = 10)
 
-### 2.2.4. Identificación de IDs con condiciones ideales
 
 
-R2_IDs_muestra_inicial <- R1_IDs_por_mes %>% 
-  filter(periodos >= 6 & minimos_TK >=30) %>% 
-  group_by(identifier) %>% 
-  summarise(start = min(month),
-            end = max(month),
-            periodos = mean(periodos,na.rm = T),
-            total_poitns = sum(points, na.rm = T),
-            monthly_points = mean(points, na.rm = T)) %>% 
-  as.data.frame()
-
-
-
+#### 2.1.3.2. Average monthly TK and individual traking intervals ----
 pt <- ggpubr::ggarrange(
   # Histogram of monthly poins per individual
   R2_IDs_muestra_inicial %>% ggplot(aes(monthly_points))+
@@ -169,11 +176,44 @@ pt <- ggpubr::ggarrange(
     theme_minimal() +
     theme(text = element_text(family = "serif",siz = 8),
           legend.position = "none"))
+pt
 ggsave("3. Graficas/01. Average monthly TK per samlped user.png",pt, w = 10, h = 7)
 
 
-# afdasfsdf
+## 2.2. Residence location ----
 
+### 2.2.1. Selectin TK poitns from ideal individuals ----
+a1_intial_sample <- a0_raw %>% 
+  filter(identifier %in% R2_IDs_muestra_inicial$identifier)
+rm(a0_raw)
+
+### 2.1.3.
+
+
+pr <- a1_intial_sample %>% 
+  group_by(identifier,hour) %>% 
+  summarise(lon_sd = sd(lon, na.rm = T),
+            lat_sd = sd(lat, na.rm = T)) %>% 
+  as.data.frame() 
+
+
+pr %>% ggplot(aes(stringr::str_pad(hour,width = 2,pad = "0"), 
+                  lon_sd)) +
+  geom_boxplot(outlier.shape = NA, color = "cyan4")+
+  coord_cartesian(ylim = c(0,0.08))+
+  stat_summary(fun.y = mean, geom = "point",
+               shape = 20, size = 4, color = "brown3")+
+  labs(title = "Variación en la longitud de las coordenadas",
+       x = "Hora", y  ="Desvición estándar (SD)")+
+theme_minimal() +
+  theme(text = element_text(family = "serif"))
+
+# pr %>% ggplot(aes(stringr::str_pad(hour-5,width = 2,pad = "0"), 
+#                   lon_sd)) +
+#   geom_boxplot(outlier.shape = NA, color = "cyan4")+
+#   coord_cartesian(ylim = c(0,0.08))+
+#   
+#   theme_minimal()
 
 
 
