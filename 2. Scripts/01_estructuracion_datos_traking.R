@@ -169,7 +169,7 @@ pt <- ggpubr::ggarrange(
     theme_minimal() +
     theme(text = element_text(family = "serif",siz = 8),
           legend.position = "none"))
-ggsave("3. Graficas/01. Average monthly TK per samlped user.png",pt, w = 10, h = 10)
+ggsave("3. Graficas/01. Average monthly TK per samlped user.png",pt, w = 10, h = 7)
 
 
 # afdasfsdf
