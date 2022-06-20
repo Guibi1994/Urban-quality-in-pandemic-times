@@ -146,7 +146,7 @@ pt <- ggpubr::ggarrange(
                               median(R2_IDs_muestra_inicial$monthly_points)),
                lty = c(1,2)) +
     labs(title = "Average monthly poitns per indiviudal",
-         subtitle = paste0("Sample size = ", nrow(pr)),
+         subtitle = paste0("Sample size = ", nrow(R2_IDs_muestra_inicial)),
          x = "Average montlhy traking poitns",
          y = "Individuals",
          caption = 
@@ -184,38 +184,47 @@ ggsave("3. Graficas/01. Average monthly TK per samlped user.png",pt, w = 10, h =
 
 ### 2.2.1. Selectin TK poitns from ideal individuals ----
 a1_intial_sample <- a0_raw %>% 
-  filter(identifier %in% R2_IDs_muestra_inicial$identifier)
-rm(a0_raw)
+  filter(identifier %in% R2_IDs_muestra_inicial$identifier) %>% 
+  mutate(month = as.Date(paste0(substr(date,1,8),"01")))
+
 
 ### 2.1.3.
 
 
 pr <- a1_intial_sample %>% 
   group_by(identifier,hour) %>% 
-  summarise(lon_sd = sd(lon, na.rm = T),
-            lat_sd = sd(lat, na.rm = T)) %>% 
-  as.data.frame()  
+  summarise(points =n(),
+            lon_avg = mean(lon, na.rm =T),
+            lon_med = median(lon, na.rm = T),
+            lon_sd = sd(lon, na.rm = T)) %>% 
+  as.data.frame()  %>% 
+  mutate(lon_sd_mt = lon_sd*111111) %>% 
+  group_by(identifier) %>% 
+  mutate(prueba = ifelse(hour %in% c(2,3,4),T,F),
+         prueba = ifelse(sum(prueba) >0,T,F)) %>% 
+  arrange(prueba,identifier, hour)
 
 
 pr %>% ggplot(aes(stringr::str_pad(hour,width = 2,pad = "0"), 
-                  lon_sd)) +
+                  lon_sd_mt)) +
   geom_boxplot(outlier.shape = NA, color = "cyan4")+
-  coord_cartesian(ylim = c(0,0.08))+
+  coord_cartesian(ylim = c(0,10000))+
+  scale_y_continuous(labels = scales::comma,
+                     breaks = scales::pretty_breaks(n =8))+
   stat_summary(fun.y = mean, geom = "point",
                shape = 20, size = 4, color = "brown3")+
-  labs(title = "Variación en la longitud de las coordenadas",
-       x = "Hora", y  ="Desvición estándar (SD)")+
+  labs(title = "Longitude Average variation per hour per individual",
+       x = "Hour", y  ="Meters (sd)")+
 theme_minimal() +
   theme(text = element_text(family = "serif"))
 
-# pr %>% ggplot(aes(stringr::str_pad(hour-5,width = 2,pad = "0"), 
-#                   lon_sd)) +
-#   geom_boxplot(outlier.shape = NA, color = "cyan4")+
-#   coord_cartesian(ylim = c(0,0.08))+
-#   
-#   theme_minimal()
 
 
 
+pr <- pr %>% filter(prueba == T, hour %in% c(2,3,4)) %>% 
+  group_by(identifier) %>% 
+  summarise(max_sd = max(lon_sd_mt, na.rm = T)) %>% 
+  as.data.frame()
 
 
+nrow(pr %>% filter(max_sd <= 150))
