@@ -26,7 +26,11 @@ Taking thise into acount, the next setp is to deside what the value of "$Y$" and
 
 ![alt text](https://github.com/Guibi1994/Urban-quality-in-pandemic-times/blob/main/3.%20Graficas/0.%20Seleccion%20muestral%20Traking%20points.png)
 
+<<<<<<< HEAD
 We finally selected a mimum of 6 active months (out of 12), and a minimun of 30 TK each months for indiviudals to be considered part of the study. Evidently this could couse several issues when calculating neighborhood average exposure time, however if we weighted the amount of TK per individual when computing exposure time it could probably acount for some of this bias. In this way, the initial sample size was  10,008 individuals, wich acount for 1,8% of the individuals from the original data-set and 13% of the inital TK (16.5 millons of TK). 
+=======
+We finally selected a mimum of 6 active months (out of 12), and a minimun of 30 TK each months for indiviudals to be considered part of the study. Evidently this could couse several issues when calculating neighborhood average exposure time, however if we weighted the amount of TK per individual when computing exposure time it could probably acount for some of this bias. In this way, the initial sample size was  9,906 individuals, wich acount for 1,8% of the individuals from the original data-set and 13% of the inital TK (16.3 millons of TK). 
+>>>>>>> f6cdf7e71ec4b96e01b96c5bd058b64bfa85c10c
 
 PENDIENTE:
 

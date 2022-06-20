@@ -194,7 +194,7 @@ pr <- a1_intial_sample %>%
   group_by(identifier,hour) %>% 
   summarise(lon_sd = sd(lon, na.rm = T),
             lat_sd = sd(lat, na.rm = T)) %>% 
-  as.data.frame() 
+  as.data.frame()  
 
 
 pr %>% ggplot(aes(stringr::str_pad(hour,width = 2,pad = "0"), 
