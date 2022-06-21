@@ -190,12 +190,13 @@ a1_intial_sample <- a0_raw %>%
 
 ### 2.1.3.
 
-
-pr <- a1_intial_sample %>% 
+# Variaciones longitudinales por ID y por hora
+R3_lon_hourly_variations <- a1_intial_sample %>% 
   group_by(identifier,hour) %>% 
   summarise(points =n(),
             lon_avg = mean(lon, na.rm =T),
             lon_med = median(lon, na.rm = T),
+            long_q75 = quantile(lon, 0.75),
             lon_sd = sd(lon, na.rm = T)) %>% 
   as.data.frame()  %>% 
   mutate(lon_sd_mt = lon_sd*111111) %>% 
@@ -204,8 +205,27 @@ pr <- a1_intial_sample %>%
          prueba = ifelse(sum(prueba) >0,T,F)) %>% 
   arrange(prueba,identifier, hour)
 
+# Resumen consetrado de las 2am a las 4am
+pr <- a1_intial_sample %>% 
+  mutate(momento = ifelse(hour %in% seq(2,4),"Sleep time\n(2am to 4am)","Rest of the day")) %>% 
+  group_by(identifier,momento) %>% 
+  summarise(points =n(),
+            lon_avg = mean(lon, na.rm =T),
+            lon_med = median(lon, na.rm = T),
+            long_q75 = as.numeric(quantile(lon, 0.75)),
+            lon_sd = sd(lon, na.rm = T)) %>% 
+  as.data.frame()  %>% 
+  mutate(lon_sd_mt = lon_sd*111111,
+         dif_med_q75 = abs(lon_med-long_q75)*111111) %>% 
+  ### borar luego
+  filter(momento !="Rest of the day")  %>% 
+  arrange(-points, -lon_sd_mt)
 
-pr %>% ggplot(aes(stringr::str_pad(hour,width = 2,pad = "0"), 
+
+
+# # # # # # # # # # # # Alguans gráficas
+
+R3_lon_hourly_variations %>% ggplot(aes(stringr::str_pad(hour,width = 2,pad = "0"), 
                   lon_sd_mt)) +
   geom_boxplot(outlier.shape = NA, color = "cyan4")+
   coord_cartesian(ylim = c(0,10000))+
@@ -216,15 +236,103 @@ pr %>% ggplot(aes(stringr::str_pad(hour,width = 2,pad = "0"),
   labs(title = "Longitude Average variation per hour per individual",
        x = "Hour", y  ="Meters (sd)")+
 theme_minimal() +
-  theme(text = element_text(family = "serif"))
+  theme(text = element_text(family = "serif", size = 8))
+
+pr %>% ggplot(aes(momento, lon_sd_mt))+
+  geom_boxplot(outlier.shape = NA)+
+  coord_cartesian(ylim = c(0,10000))+
+  stat_summary(fun.y = mean, geom = "point",
+               shape = 20, size = 4, color = "brown3") +
+  scale_y_continuous(labels = scales::comma,
+                     breaks = scales::pretty_breaks(n = 10))+
+  theme_minimal()
 
 
 
 
-pr <- pr %>% filter(prueba == T, hour %in% c(2,3,4)) %>% 
+
+### casos interesantes
+pr <- a1_intial_sample %>% 
+  filter(identifier =="e0a365a4-cd0f-45c9-8864-cd0682095b56",
+         hour %in% seq(2,4))
+
+
+
+pr <- a1_intial_sample %>% 
+  filter(identifier =="179adf81-0f5e-4241-a64e-7ee12856065b",
+         hour %in% seq(2,4))
+
+
+pr %>% ggplot(aes(lon))+
+  geom_histogram(alpha = 0.5) +
+  geom_vline(xintercept = 
+               c(mean(pr$lon), median(pr$lon)), 
+             lty = c(1,2), color = "red")+
+  theme_minimal()
+
+pr %>% ggplot(aes(lat))+
+  geom_histogram(alpha = 0.5) +
+  geom_vline(xintercept = 
+               c(mean(pr$lat), median(pr$lat)), 
+             lty = c(1,2), color = "red")+
+  theme_minimal()
+
+
+
+##### Revision espacial
+
+
+library(sf)
+library(sp)
+library(leaflet)
+
+
+pr <- a1_intial_sample %>% 
+  filter(identifier =="179adf81-0f5e-4241-a64e-7ee12856065b",
+         hour %in% seq(2,4))
+
+pr <- a1_intial_sample %>% 
+  filter(identifier =="e0a365a4-cd0f-45c9-8864-cd0682095b56",
+         hour %in% seq(2,4))
+
+pr1 <- pr %>% 
+  as.data.frame() %>% 
   group_by(identifier) %>% 
-  summarise(max_sd = max(lon_sd_mt, na.rm = T)) %>% 
-  as.data.frame()
+  summarise(lon = mean(lon,na.rm = T),
+            lat = mean(lat, na.rm = T)) %>% 
+  as.data.frame() %>% 
+  st_as_sf(coords = c("lon","lat")) %>% 
+  st_set_crs(4326)
+
+pr2 <- pr %>% 
+  as.data.frame() %>% 
+  group_by(identifier) %>% 
+  summarise(lon = median(lon,na.rm = T),
+            lat = median(lat, na.rm = T)) %>% 
+  as.data.frame() %>% 
+  st_as_sf(coords = c("lon","lat")) %>% 
+  st_set_crs(4326)
+
+pr <- st_as_sf(pr, coords = c("lon","lat")) %>% 
+  st_set_crs(4326)
 
 
-nrow(pr %>% filter(max_sd <= 150))
+
+
+leaflet() %>% 
+  addCircleMarkers(data = pr, color = "blue",
+                   radius =3)%>%
+  addCircleMarkers(data = pr1, color = "red",
+                   radius =5)%>%
+  addCircleMarkers(data = pr2, color = "orange",
+                   radius =5)%>%
+  
+  addProviderTiles("Stamen.Toner")
+
+
+
+
+"179adf81-0f5e-4241-a64e-7ee12856065b"
+
+
+
