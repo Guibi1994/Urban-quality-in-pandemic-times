@@ -190,7 +190,7 @@ a1_intial_sample <- a0_raw %>%
 
 ### 2.1.3.
 
-# Variaciones longitudinales por ID y por hora
+# Variaciones longitudinales por ID y por hora ----
 R3_lon_hourly_variations <- a1_intial_sample %>% 
   group_by(identifier,hour) %>% 
   summarise(points =n(),
@@ -205,21 +205,26 @@ R3_lon_hourly_variations <- a1_intial_sample %>%
          prueba = ifelse(sum(prueba) >0,T,F)) %>% 
   arrange(prueba,identifier, hour)
 
-# Resumen consetrado de las 2am a las 4am
-pr <- a1_intial_sample %>% 
+# Resumen consetrado de las 2am a las 4am ----
+R4_2am_4am_lon_variations <- a1_intial_sample %>% 
   mutate(momento = ifelse(hour %in% seq(2,4),"Sleep time\n(2am to 4am)","Rest of the day")) %>% 
   group_by(identifier,momento) %>% 
   summarise(points =n(),
             lon_avg = mean(lon, na.rm =T),
             lon_med = median(lon, na.rm = T),
+            lon_q25 = as.numeric(quantile(lon, 0.25)),
             long_q75 = as.numeric(quantile(lon, 0.75)),
             lon_sd = sd(lon, na.rm = T)) %>% 
   as.data.frame()  %>% 
-  mutate(lon_sd_mt = lon_sd*111111,
-         dif_med_q75 = abs(lon_med-long_q75)*111111) %>% 
+  mutate(lon_sd_mt = round(lon_sd*111111,2),
+         dif_med_q75 = abs(lon_med-long_q75)*111111,
+         dif_q25_q75 = abs(lon_q25-long_q75)*111111,) %>% 
   ### borar luego
   filter(momento !="Rest of the day")  %>% 
-  arrange(-points, -lon_sd_mt)
+  arrange(-lon_sd_mt,-points) %>% 
+  mutate(grupos = 
+           case_when(lon_sd_mt <= 500 & dif_q25_q75 <= 500~"Rescatados",
+                     T~"Otros"),)
 
 
 
@@ -238,45 +243,69 @@ R3_lon_hourly_variations %>% ggplot(aes(stringr::str_pad(hour,width = 2,pad = "0
 theme_minimal() +
   theme(text = element_text(family = "serif", size = 8))
 
-pr %>% ggplot(aes(momento, lon_sd_mt))+
+R4_2am_4am_lon_variations %>% ggplot(aes(momento, lon_sd_mt))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim = c(0,10000))+
   stat_summary(fun.y = mean, geom = "point",
                shape = 20, size = 4, color = "brown3") +
   scale_y_continuous(labels = scales::comma,
                      breaks = scales::pretty_breaks(n = 10))+
-  theme_minimal()
+  theme_minimal() 
 
-
+R4_2am_4am_lon_variations %>%
+  ggplot(aes(points, lon_sd_mt, color = grupos))+
+  geom_point()+
+  scale_color_manual(values = c("grey45","red"))
 
 
 
 ### casos interesantes
+# Con cambio de residencia
+# ebfe90a7-2be2-4c45-81ed-2f4fb66c1bd2
+# 7af41c15-bdbe-44ec-95ff-10ca1ad1abe1
+# 9e2c75fc-9f4e-4ec0-9c8c-438db1c33a6d
+
+
+# Sin cambio de residencia
+# 4b02a7f1-dcfa-48c3-a6e5-d4aa3f75f0cc
+# 3fcc2c8e-d2ab-4ee1-92ca-51357aa550c8
+
+
 pr <- a1_intial_sample %>% 
-  filter(identifier =="e0a365a4-cd0f-45c9-8864-cd0682095b56",
-         hour %in% seq(2,4))
+  filter(identifier =="3fcc2c8e-d2ab-4ee1-92ca-51357aa550c8",
+         hour %in% seq(2,4)) %>% 
+  arrange(date, hour)
 
-
-
-pr <- a1_intial_sample %>% 
-  filter(identifier =="179adf81-0f5e-4241-a64e-7ee12856065b",
-         hour %in% seq(2,4))
-
-
+ggpubr::ggarrange(
 pr %>% ggplot(aes(lon))+
-  geom_histogram(alpha = 0.5) +
+  geom_histogram(alpha = 0.9, fill = "pink") +
   geom_vline(xintercept = 
                c(mean(pr$lon), median(pr$lon)), 
              lty = c(1,2), color = "red")+
-  theme_minimal()
+  labs(title = "LONGITUDE")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)),
 
 pr %>% ggplot(aes(lat))+
-  geom_histogram(alpha = 0.5) +
+  geom_histogram(alpha = 0.5, fill = "cyan2") +
   geom_vline(xintercept = 
                c(mean(pr$lat), median(pr$lat)), 
-             lty = c(1,2), color = "red")+
-  theme_minimal()
+             lty = c(1,2), color = "blue")+
+  labs(title = "LATITUDE")+
+  theme_minimal()+
+  theme(plot.title = element_text(hjust = 0.5)))
 
+
+pr %>% ggplot(aes(date, lon))+
+  geom_point(alpha = 0.5)+
+  geom_path(aes(date),color = "cyan4", lty = 1)+
+  scale_x_date(breaks = scales::pretty_breaks(n = 10))+
+  geom_vline(xintercept = as.Date("2020-03-25"), lty = 2, color = "red")+
+  labs(title = "Sleeping coordinates (2am to 4am)",
+       subtitle = paste0("Individual ID code: ", pr$identifier[1]),
+       y = "Longitude",x = "Date", 
+       caption = "[----] First Quarantine (march 25-2020)")+
+  theme_minimal()
 
 
 ##### Revision espacial
@@ -289,7 +318,7 @@ library(leaflet)
 
 pr <- a1_intial_sample %>% 
   filter(identifier =="179adf81-0f5e-4241-a64e-7ee12856065b",
-         hour %in% seq(2,4))
+         hour %in% seq(0,20))
 
 pr <- a1_intial_sample %>% 
   filter(identifier =="e0a365a4-cd0f-45c9-8864-cd0682095b56",
@@ -313,6 +342,15 @@ pr2 <- pr %>%
   st_as_sf(coords = c("lon","lat")) %>% 
   st_set_crs(4326)
 
+pr3 <- pr %>% 
+  as.data.frame() %>% 
+  group_by(identifier) %>% 
+  summarise(lon = modeest::mlv(lon, method = "meanshift") %>% as.numeric(),
+            lat = modeest::mlv(lat, method = "meanshift") %>% as.numeric()) %>% 
+  as.data.frame() %>% 
+  st_as_sf(coords = c("lon","lat")) %>% 
+  st_set_crs(4326)
+
 pr <- st_as_sf(pr, coords = c("lon","lat")) %>% 
   st_set_crs(4326)
 
@@ -321,12 +359,15 @@ pr <- st_as_sf(pr, coords = c("lon","lat")) %>%
 
 leaflet() %>% 
   addCircleMarkers(data = pr, color = "blue",
-                   radius =3)%>%
-  addCircleMarkers(data = pr1, color = "red",
-                   radius =5)%>%
-  addCircleMarkers(data = pr2, color = "orange",
-                   radius =5)%>%
-  
+                   radius =3,
+                   popup = as.character(pr$date))%>%
+  # addCircleMarkers(data = pr1, color = "red",
+  #                  radius =5)%>%
+  # addCircleMarkers(data = pr2, color = "orange",
+  #                  radius =5)%>%
+  addCircleMarkers(data = pr2, color = "purple",
+                   radius =18)%>%
+
   addProviderTiles("Stamen.Toner")
 
 
@@ -334,5 +375,8 @@ leaflet() %>%
 
 "179adf81-0f5e-4241-a64e-7ee12856065b"
 
+median(pr$lon)
+mean(pr$lon)
+moda(pr$lon)
 
-
+modeest::mlv(pr$lon, method = "meanshift") %>% as.numeric()
